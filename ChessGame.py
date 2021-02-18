@@ -865,19 +865,22 @@ class Board ():
         for x in range (8):
             board.append([0] * 8)
         self.board = board
+        self.winner = None
+        
 
     def InitalizeBoard (self):
         # Set the position of the pieces
         for x in range (0, 8):
             # Set pawn positions
+            
             self.board[1][x] = Pawn (False, 1, x, self)
             self.board[6][x] = Pawn (True, 6, x, self)
-
+            '''
             # Set rook positions
             if (x == 0 or x == 7):
                 self.board[0][x] = Rook (False, 0, x, self)
                 self.board[7][x] = Rook (True, 7, x, self)   
-
+            
             # Set bishop positions
             if (x == 2 or x == 5):
                 self.board[0][x] = Bishop (False, 0, x, self)
@@ -887,19 +890,20 @@ class Board ():
             if (x == 1 or x == 6):
                 self.board[0][x] = Knight (False, 0, x, self)
                 self.board[7][x] = Knight (True, 7, x, self) 
-
+            
             # Set queen positions
             if (x == 3):
                 self.board[0][x] = Queen (False, 0, x, self)
                 self.board[7][x] = Queen (True, 7, x, self)
-            
+            '''
             # Set king positions
             if (x == 4):
                 self.board[0][x] = King (False, 0, x, self)
                 self.blackKing = ((0, x))
                 self.board[7][x] = King (True, 7, x, self)
                 self.whiteKing = ((7, x))
-
+        self.pieces = sum([y != 0 for x in self.board for y in x ])
+        print(self.pieces)
     # Moves piece on the board, returns true if move was completed (and consequently legal) and false if move was not able
     # to be completed (move was illegal or the coordinates provided did not contain a piece)
     def Move (self, curCoords, targetCoords):
@@ -915,6 +919,7 @@ class Board ():
             if (self.board[targetY][targetX] != 0):
                 if (self.board[targetY][targetX].color != self.board[curY][curX].color):
                     didTake = True
+                    self.pieces -=1
             
             # If piece selected is a pawn, and it takes a piece, find which direction it took the piece (from the left or right)
             # this is important for algebraic notation.
@@ -979,7 +984,67 @@ class Board ():
         else:
             return False
 
+    def Checkmate(self):
+        x, y = self.whiteKing
+        if InCheck(self.board, self.whiteKing) and len(self.board[x][y].MoveList())==0:
+            self.winner = 'Black'
+            return True
+        x, y = self.blackKing 
+        if InCheck(self.board, self.blackKing) and len(self.board[x][y].MoveList())==0:
+            self.winner = 'White'
+            return True
+        return False
 
+    def StaleMate(self):
+        if self.pieces == 3:
+            for x in self.board:
+                for y in x:
+                    if isinstance(y, Queen):
+                        return False
+                    elif isinstance(y, Rook):
+                        return False
+                    elif isinstance(y, Pawn):
+                        return False
+            return True
+        elif self.pieces == 4 or self.pieces == 5:
+            color = None
+            for x in self.board:
+                for y in x:
+                    if isinstance(y, Queen):
+                        return False
+                    elif isinstance(y, Rook):
+                        return False
+                    elif isinstance(y, Bishop):
+                        if color is None:
+                            color = y.color
+                        elif color == y.color:
+                            return False
+                        return False
+                    elif isinstance(y, Pawn):
+                        return False
+                    elif isinstance(y,Knight):
+                        if color is not None and y.color == color:
+                            return False
+            return True
+        elif self.pieces == 6:
+            for x in self.board:
+                for y in x:
+                    if isinstance(y, Queen):
+                        return False
+                    elif isinstance(y, Rook):
+                        return False
+                    elif isinstance(y, Bishop):
+                        return False
+                    elif isinstance(y, Pawn):
+                        return False
+            return True
+        x, y = self.whiteKing
+        x1, y1 = self.blackKing
+        if  (len(self.board[x][y].MoveList())==0 and not InCheck(self.board, self.whiteKing)) or \
+            (len(self.board[x1][y1].MoveList())==0 and not InCheck(self.board, self.blackKing)):
+            return True
+        return False
+            
     def ShowBoard (self):
         print (" -----------------")
         for row in range (0, 8):
